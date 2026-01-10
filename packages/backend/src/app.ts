@@ -5,8 +5,10 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import 'express-async-errors';
 import { config } from './config';
+import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middleware/error.middleware';
 import { apiLimiter } from './middleware/ratelimit.middleware';
 import routes from './routes';
@@ -15,7 +17,19 @@ import logger from './utils/logger';
 const app: Express = express();
 
 // Security middleware
-app.use(helmet());
+// Configure CSP to allow Swagger UI
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
+      },
+    },
+  })
+);
 app.use(
   cors({
     origin: config.cors.origin,
@@ -37,6 +51,18 @@ app.use((req, _res, next) => {
     userAgent: req.get('user-agent'),
   });
   next();
+});
+
+// Swagger API documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'iForgotPassword API Documentation',
+}));
+
+// Swagger JSON endpoint
+app.get('/api-docs.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // Routes

@@ -25,6 +25,7 @@ Build a secure, user-controlled password manager that gives users the freedom to
   - Shared crypto library (packages/shared/crypto)
   - Backend scaffolding with Express
   - PostgreSQL setup (local + Supabase)
+  - Swagger/OpenAPI documentation
   
 - **Week 3-4: Core Backend**
   - User authentication (register/login)
