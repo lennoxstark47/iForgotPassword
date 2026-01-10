@@ -1,0 +1,28 @@
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Extension package
+*.zip
+*.crx
+*.xpi
