@@ -93,6 +93,16 @@ pnpm start
 
 ## API Documentation
 
+### Interactive Documentation
+
+The API includes interactive Swagger/OpenAPI documentation available at:
+
+```
+http://localhost:3000/api-docs
+```
+
+This provides a complete, interactive interface to explore and test all API endpoints.
+
 ### Base URL
 
 ```
