@@ -1,0 +1,46 @@
+{
+  "name": "iforgotpassword",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Secure password manager ecosystem with self-hosting capabilities",
+  "workspaces": [
+    "packages/*",
+    "packages/shared/*"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:backend": "turbo run dev --filter=backend",
+    "dev:extension": "turbo run dev --filter=browser-extension",
+    "dev:mobile": "turbo run dev --filter=mobile",
+
+    "build": "turbo run build",
+    "build:all": "turbo run build --force",
+
+    "test": "turbo run test",
+    "test:coverage": "turbo run test -- --coverage",
+
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+
+    "type-check": "turbo run type-check",
+
+    "clean": "turbo run clean && rm -rf node_modules",
+
+    "deploy:backend": "turbo run deploy --filter=backend",
+    "deploy:extension": "turbo run build --filter=browser-extension && ./scripts/deploy-extension.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "turbo": "^1.11.2",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "pnpm@8.14.0"
+}
