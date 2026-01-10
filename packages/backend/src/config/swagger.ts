@@ -372,6 +372,10 @@ const options: swaggerJsdoc.Options = {
         description: 'Encrypted vault management endpoints',
       },
       {
+        name: 'Sync',
+        description: 'Multi-device synchronization endpoints',
+      },
+      {
         name: 'Health',
         description: 'System health check',
       },
