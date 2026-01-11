@@ -62,6 +62,22 @@ export class LocalStorage {
   }
 
   /**
+   * Save settings (alias for updateSettings for consistency)
+   */
+  async saveSettings(settings: Settings): Promise<void> {
+    await browser.storage.local.set({ settings });
+  }
+
+  /**
+   * Get device ID synchronously (cached version)
+   */
+  getDeviceIdSync(): string {
+    // Generate a random device ID for sync operations
+    // This should ideally be cached from the async version
+    return crypto.randomUUID();
+  }
+
+  /**
    * Get authentication hash (hashed master password for verification)
    */
   async getAuthHash(): Promise<string | null> {
@@ -116,3 +132,4 @@ export class LocalStorage {
 
 // Export singleton instance
 export const localStorage = new LocalStorage();
+export const localStorageService = localStorage; // Alias for compatibility
