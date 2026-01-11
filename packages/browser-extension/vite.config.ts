@@ -1,16 +1,36 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import webExtension from 'vite-plugin-web-extension';
+// @ts-ignore
 import path from 'path';
+// @ts-ignore
+import fs from 'fs';
 
 export default defineConfig({
   plugins: [
     react(),
-    webExtension({
-      manifest: './src/manifest.json',
-      additionalInputs: ['src/pages/popup.html'],
-      disableAutoLaunch: true,
-    }),
+    // Custom plugin to copy manifest and handle multi-entry builds
+    {
+      name: 'build-extension',
+      writeBundle() {
+        // Copy manifest to dist
+        const manifest = fs.readFileSync(path.resolve(__dirname, 'src/manifest.json'), 'utf-8');
+        fs.writeFileSync(path.resolve(__dirname, 'dist/manifest.json'), manifest);
+
+        // Copy assets folder if it exists
+        const assetsDir = path.resolve(__dirname, 'src/assets');
+        const distAssetsDir = path.resolve(__dirname, 'dist/assets');
+        if (fs.existsSync(assetsDir)) {
+          fs.mkdirSync(distAssetsDir, { recursive: true });
+          const files = fs.readdirSync(assetsDir);
+          files.forEach(file => {
+            fs.copyFileSync(
+              path.join(assetsDir, file),
+              path.join(distAssetsDir, file)
+            );
+          });
+        }
+      },
+    },
   ],
   resolve: {
     alias: {
@@ -21,6 +41,9 @@ export default defineConfig({
       '@shared/validators': path.resolve(__dirname, '../shared/validators/src'),
     },
   },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -28,6 +51,20 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: path.resolve(__dirname, 'src/pages/popup.html'),
+        background: path.resolve(__dirname, 'src/background.ts'),
+        content: path.resolve(__dirname, 'src/content.ts'),
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          // Put background and content in src/ folder to match manifest
+          if (chunkInfo.name === 'background' || chunkInfo.name === 'content') {
+            return 'src/[name].js';
+          }
+          return '[name].js';
+        },
+        // Prevent code splitting - each entry should be self-contained
+        manualChunks: undefined,
+        inlineDynamicImports: false,
       },
     },
   },
