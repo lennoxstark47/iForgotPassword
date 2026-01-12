@@ -61,8 +61,14 @@ class AuthService {
     // Store tokens
     await sessionStorage.setTokens(loginResponse.token, loginResponse.refreshToken);
 
-    // Notify background script
-    await browser.runtime.sendMessage({ type: 'VAULT_UNLOCKED' });
+    // Notify background script (non-blocking, ignore errors)
+    try {
+      await browser.runtime.sendMessage({ type: 'VAULT_UNLOCKED' });
+    } catch (error) {
+      // Background script might not be ready or message passing might fail
+      // This is non-critical, so we can continue
+      console.warn('Failed to notify background script:', error);
+    }
 
     return {
       email,
@@ -102,8 +108,14 @@ class AuthService {
     // Save user email locally (in case it wasn't saved before)
     await localStorage.setUserEmail(email);
 
-    // Notify background script
-    await browser.runtime.sendMessage({ type: 'VAULT_UNLOCKED' });
+    // Notify background script (non-blocking, ignore errors)
+    try {
+      await browser.runtime.sendMessage({ type: 'VAULT_UNLOCKED' });
+    } catch (error) {
+      // Background script might not be ready or message passing might fail
+      // This is non-critical, so we can continue
+      console.warn('Failed to notify background script:', error);
+    }
 
     return {
       email,
@@ -118,8 +130,12 @@ class AuthService {
     // Clear session storage (tokens and encryption key)
     await sessionStorage.clear();
 
-    // Notify background script
-    await browser.runtime.sendMessage({ type: 'VAULT_LOCKED' });
+    // Notify background script (non-blocking, ignore errors)
+    try {
+      await browser.runtime.sendMessage({ type: 'VAULT_LOCKED' });
+    } catch (error) {
+      console.warn('Failed to notify background script:', error);
+    }
   }
 
   /**
@@ -135,8 +151,12 @@ class AuthService {
     // Clear vault from IndexedDB
     await indexedDB.clearAll();
 
-    // Notify background script
-    await browser.runtime.sendMessage({ type: 'VAULT_LOCKED' });
+    // Notify background script (non-blocking, ignore errors)
+    try {
+      await browser.runtime.sendMessage({ type: 'VAULT_LOCKED' });
+    } catch (error) {
+      console.warn('Failed to notify background script:', error);
+    }
   }
 
   /**
