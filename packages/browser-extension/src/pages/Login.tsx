@@ -21,17 +21,28 @@ export function Login() {
     setLoading(true);
 
     try {
+      console.log('[LOGIN] Starting login process...');
+      
       const result = await authService.unlock({
         email,
         masterPassword,
       });
 
+      console.log('[LOGIN] Login successful, updating state and navigating to vault');
       unlock(result.email, result.encryptionKey);
+      
+      // Firefox-specific: Force state update by explicitly calling setView
+      const { setView } = useAppStore.getState();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      setView('vault');
+      
+      console.log('[LOGIN] Forced view to vault');
+      setLoading(false);
     } catch (error) {
+      console.error('[LOGIN] Error during login:', error);
       const message = error instanceof Error ? error.message : 'Failed to login';
       setErrorMessage(message);
       setError(message);
-    } finally {
       setLoading(false);
     }
   };

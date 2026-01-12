@@ -58,7 +58,15 @@ export function Register() {
         confirmPassword,
       });
 
+      console.log('[REGISTER] Registration successful, updating state and navigating to vault');
       unlock(result.email, result.encryptionKey);
+      
+      // Firefox-specific: Force state update by explicitly calling setView
+      const { setView } = useAppStore.getState();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      setView('vault');
+      
+      console.log('[REGISTER] Forced view to vault');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to register';
       setErrorMessage(message);

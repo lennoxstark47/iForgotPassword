@@ -29,18 +29,34 @@ export function Unlock() {
     setErrorMessage('');
     setLoading(true);
 
+    console.log('[UNLOCK] Starting unlock process...');
+    
     try {
       const result = await authService.unlock({
         email,
         masterPassword,
       });
 
+      console.log('[UNLOCK] ============ UNLOCK RESULT RECEIVED ============');
+      console.log('[UNLOCK] Result:', result);
+      
+      if (!result || !result.email || !result.encryptionKey) {
+        throw new Error('Invalid unlock result');
+      }
+      
+      console.log('[UNLOCK] Calling unlock() from store');
+      
+      // Update state
       unlock(result.email, result.encryptionKey);
+      
+      console.log('[UNLOCK] Store updated successfully');
+      setLoading(false);
     } catch (error) {
+      console.error('[UNLOCK] ============ ERROR OCCURRED ============');
+      console.error('[UNLOCK] Error:', error);
       const message = error instanceof Error ? error.message : 'Failed to unlock vault';
       setErrorMessage(message);
       setError(message);
-    } finally {
       setLoading(false);
     }
   };

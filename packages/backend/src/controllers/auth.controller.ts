@@ -182,3 +182,38 @@ export async function refreshToken(req: Request, res: Response, next: NextFuncti
     next(error);
   }
 }
+
+/**
+ * Get user salt for key derivation
+ * This endpoint allows cross-browser/device login by retrieving the salt
+ */
+export async function getSalt(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      throw new BadRequestError('Email is required');
+    }
+
+    const db = getDatabase();
+    const user = await db.getUserByEmail(email);
+
+    if (!user) {
+      // Return generic error to prevent email enumeration
+      throw new UnauthorizedError('Invalid email');
+    }
+
+    logger.info(`Salt retrieved for user: ${email}`);
+
+    res.json({
+      success: true,
+      data: {
+        salt: user.salt,
+        kdfIterations: user.kdfIterations,
+        kdfAlgorithm: user.kdfAlgorithm,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}

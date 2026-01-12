@@ -11,6 +11,22 @@ import { autofillService } from './services/autofill';
 
 console.log('iForgotPassword background service worker loaded');
 
+// ==================== Session State Management ====================
+// Store session state in memory to persist across popup open/close
+interface SessionState {
+  encryptionKey: string | null; // Base64 encoded raw key
+  accessToken: string | null;
+  refreshToken: string | null;
+  userEmail: string | null;
+}
+
+let sessionState: SessionState = {
+  encryptionKey: null,
+  accessToken: null,
+  refreshToken: null,
+  userEmail: null,
+};
+
 // Listen for extension installation or update
 browser.runtime.onInstalled.addListener((details) => {
   console.log('Extension installed/updated:', details.reason);
@@ -36,7 +52,14 @@ function resetAutoLockTimer() {
 
   autoLockTimer = setTimeout(() => {
     console.log('Auto-locking vault due to inactivity');
-    // Clear session storage
+    // Clear session state
+    sessionState = {
+      encryptionKey: null,
+      accessToken: null,
+      refreshToken: null,
+      userEmail: null,
+    };
+    // Also clear browser.storage.session as fallback
     browser.storage.session.clear().catch(console.error);
   }, AUTO_LOCK_TIMEOUT);
 }
@@ -71,9 +94,8 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
  */
 async function performBackgroundSync() {
   try {
-    // Check if user is authenticated (has tokens)
-    const sessionData = await browser.storage.session.get(['accessToken']);
-    if (!sessionData.accessToken) {
+    // Check if user is authenticated (has tokens in memory)
+    if (!sessionState.accessToken) {
       console.log('Background sync skipped: not authenticated');
       return;
     }
@@ -128,11 +150,43 @@ browser.runtime.onMessage.addListener((message, sender) => {
   console.log('Background received message:', message);
 
   if (message.type === 'VAULT_UNLOCKED') {
+    // Store session data
+    if (message.encryptionKey) {
+      sessionState.encryptionKey = message.encryptionKey;
+    }
+    if (message.accessToken) {
+      sessionState.accessToken = message.accessToken;
+    }
+    if (message.refreshToken) {
+      sessionState.refreshToken = message.refreshToken;
+    }
+    if (message.userEmail) {
+      sessionState.userEmail = message.userEmail;
+    }
+    
+    console.log('[BACKGROUND] Vault unlocked, session stored');
+    
     // Start auto-lock timer when vault is unlocked
     resetAutoLockTimer();
     // Trigger immediate sync when vault unlocked
     performBackgroundSync().catch(console.error);
+    
+    // Firefox workaround: Close all extension views to force re-render
+    // When popup reopens, it will restore session and show vault
+    if (message.isFirefox) {
+      console.log('[BACKGROUND] Firefox detected - closing extension views');
+      browser.extension.getViews({ type: 'popup' }).forEach(view => {
+        view.close();
+      });
+    }
   } else if (message.type === 'VAULT_LOCKED') {
+    // Clear session state
+    sessionState = {
+      encryptionKey: null,
+      accessToken: null,
+      refreshToken: null,
+      userEmail: null,
+    };
     // Clear auto-lock timer when vault is manually locked
     if (autoLockTimer) {
       clearTimeout(autoLockTimer);
@@ -141,6 +195,18 @@ browser.runtime.onMessage.addListener((message, sender) => {
   } else if (message.type === 'RESET_LOCK_TIMER') {
     // Reset the timer on user activity
     resetAutoLockTimer();
+  } else if (message.type === 'GET_SESSION') {
+    // Return session state to popup
+    return Promise.resolve({
+      success: true,
+      session: sessionState,
+    });
+  } else if (message.type === 'SET_SESSION') {
+    // Update session state from popup
+    if (message.session) {
+      sessionState = { ...sessionState, ...message.session };
+    }
+    return Promise.resolve({ success: true });
   } else if (message.type === 'TRIGGER_SYNC') {
     // Manual sync trigger
     performBackgroundSync()
@@ -190,9 +256,8 @@ async function handleAutofillRequest(url: string, tabId?: number): Promise<any> 
       };
     }
 
-    // Check if vault is unlocked (has encryption key in session)
-    const sessionData = await browser.storage.session.get(['encryptionKey']);
-    if (!sessionData.encryptionKey) {
+    // Check if vault is unlocked (has encryption key in memory)
+    if (!sessionState.encryptionKey) {
       return {
         success: false,
         error: 'Vault is locked. Please unlock to use autofill.',
@@ -200,7 +265,7 @@ async function handleAutofillRequest(url: string, tabId?: number): Promise<any> 
     }
 
     // Convert stored key back to CryptoKey
-    const encryptionKey = await importEncryptionKey(sessionData.encryptionKey);
+    const encryptionKey = await importEncryptionKeyFromBase64(sessionState.encryptionKey);
 
     // Get matching credentials
     const credentials = await autofillService.getMatchingCredentials(url, encryptionKey);
@@ -219,12 +284,19 @@ async function handleAutofillRequest(url: string, tabId?: number): Promise<any> 
 }
 
 /**
- * Import encryption key from stored JWK
+ * Import encryption key from base64 encoded raw key
  */
-async function importEncryptionKey(jwk: any): Promise<CryptoKey> {
+async function importEncryptionKeyFromBase64(base64Key: string): Promise<CryptoKey> {
+  // Decode base64 to ArrayBuffer
+  const binary = atob(base64Key);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  
   return await crypto.subtle.importKey(
-    'jwk',
-    jwk,
+    'raw',
+    bytes.buffer,
     {
       name: 'AES-GCM',
       length: 256,

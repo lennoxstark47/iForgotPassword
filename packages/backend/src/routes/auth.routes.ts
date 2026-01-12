@@ -3,7 +3,7 @@
  */
 
 import { Router, type IRouter } from 'express';
-import { register, login, refreshToken } from '../controllers/auth.controller';
+import { register, login, refreshToken, getSalt } from '../controllers/auth.controller';
 import { loginLimiter, registrationLimiter } from '../middleware/ratelimit.middleware';
 
 const router: IRouter = Router();
@@ -124,5 +124,54 @@ router.post('/login', loginLimiter, login);
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/refresh', refreshToken);
+
+/**
+ * @swagger
+ * /auth/salt:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Get user salt for key derivation
+ *     description: Retrieves the salt and KDF parameters for a user to enable cross-browser/device login
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Salt retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     salt:
+ *                       type: string
+ *                     kdfIterations:
+ *                       type: number
+ *                     kdfAlgorithm:
+ *                       type: string
+ *       401:
+ *         description: Invalid email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/salt', loginLimiter, getSalt);
 
 export default router;

@@ -26,6 +26,8 @@ class ApiService {
    * Register a new user
    */
   async register(data: RegisterRequest): Promise<RegisterResponse> {
+    console.log('[API] Register request:', { email: data.email });
+    
     const response = await fetch(`${this.baseUrl}/api/v1/auth/register`, {
       method: 'POST',
       headers: {
@@ -36,16 +38,44 @@ class ApiService {
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('[API] Registration failed:', error);
       throw new Error(error.message || 'Registration failed');
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('[API] Register response:', result);
+    
+    // Backend returns { success: true, data: { userId, token, refreshToken } }
+    return result.data || result;
+  }
+
+  /**
+   * Get user salt for key derivation
+   */
+  async getSalt(email: string): Promise<{ salt: string; kdfIterations: number; kdfAlgorithm: string }> {
+    const response = await fetch(`${this.baseUrl}/api/v1/auth/salt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to retrieve salt');
+    }
+
+    const result = await response.json();
+    return result.data;
   }
 
   /**
    * Login user
    */
   async login(data: LoginRequest): Promise<LoginResponse> {
+    console.log('[API] Login request:', { email: data.email, deviceId: data.deviceId });
+    
     const response = await fetch(`${this.baseUrl}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
@@ -56,15 +86,21 @@ class ApiService {
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('[API] Login failed:', error);
       throw new Error(error.message || 'Login failed');
     }
 
     const result = await response.json();
+    console.log('[API] Login response:', result);
+
+    // Backend returns { success: true, data: { token, refreshToken, ... } }
+    // Extract the actual data
+    const loginData = result.data || result;
 
     // Store tokens in session storage
-    await sessionStorage.setTokens(result.accessToken, result.refreshToken);
+    await sessionStorage.setTokens(loginData.token, loginData.refreshToken);
 
-    return result;
+    return loginData;
   }
 
   /**
