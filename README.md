@@ -198,23 +198,43 @@ The migration script will set up all necessary tables and indexes.
 
 ### Phase 1: MVP - Backend + Browser Extension (Months 1-4)
 
-**Current Status**: Month 1, Week 1-2 ✅
+**Current Status**: Month 2, Week 3-4 ✅
 
-#### ✅ Completed (Week 1-2)
-- Monorepo setup with pnpm + Turborepo
-- Shared crypto library
-- Shared types, constants, validators
-- Backend scaffolding with Express
-- PostgreSQL database setup
-- Database adapter pattern
-- Authentication endpoints
-- Vault CRUD endpoints
+#### ✅ Completed
 
-#### 🚧 Next Steps (Week 3-4)
-- Complete sync endpoints
-- Add comprehensive tests
-- Set up CI/CD pipeline
-- Begin browser extension development
+**Month 1 (Backend Foundation)**
+- Week 1-2:
+  - Monorepo setup with pnpm + Turborepo
+  - Shared crypto library
+  - Shared types, constants, validators
+  - Backend scaffolding with Express
+  - PostgreSQL database setup
+  - Database adapter pattern
+  - Authentication endpoints
+  - Vault CRUD endpoints
+
+**Month 2 (Browser Extension)**
+- Week 1-2:
+  - Chrome Manifest V3 extension structure
+  - React + TypeScript + Tailwind UI
+  - Master password unlock flow
+  - Local encrypted storage (IndexedDB)
+  - Session management
+  - Backend API integration
+  - Zero-knowledge key derivation
+- Week 3-4:
+  - Full vault CRUD operations
+  - Password generator with strength analysis
+  - Search and filter functionality
+  - Settings page
+  - Vault item management UI
+  - Sync functionality
+
+#### 🚧 Next Steps (Week 5-6)
+- Auto-fill functionality
+- Browser context menu integration
+- Comprehensive testing suite
+- Performance optimization
 
 ## Contributing
 

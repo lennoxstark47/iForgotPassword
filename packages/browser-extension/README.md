@@ -13,12 +13,21 @@ Browser extension for Chrome and Firefox with zero-knowledge password management
 - Backend API integration
 - Zero-knowledge key derivation
 
-### Week 3-4 (Vault Management) - Coming Soon
-- Add/Edit/Delete credentials
-- Password generator
-- Search functionality
-- Settings page
+### Week 3-4 (Vault Management) ✅
+- Add/Edit/Delete credentials with full CRUD operations
+- Password generator with configurable options
+  - Password mode with length, character types, exclusions
+  - Passphrase mode for memorable passwords
+  - Strength indicator and crack time estimation
+- Search and filter functionality
+- Settings page with security and advanced options
+- Vault item display with copy functionality
+- Confirmation dialogs for destructive actions
+- Sync functionality with backend server
+
+### Week 5-6 (Auto-fill) - Coming Soon
 - Auto-fill integration
+- Browser context menu integration
 
 ## Development
 
@@ -146,14 +155,36 @@ pnpm type-check
 pnpm lint
 ```
 
-## Next Steps (Week 3-4)
+## Features Implemented
 
-1. Implement vault CRUD operations
-2. Build password generator UI
-3. Add search and filtering
-4. Create settings page
-5. Implement auto-fill detection
-6. Add comprehensive tests
+### Vault Management (Week 3-4) ✅
+- **Full CRUD Operations**: Create, read, update, and delete vault items
+- **Password Generator**: Generate secure passwords with customizable options
+  - Adjustable length (8-64 characters)
+  - Character type selection (uppercase, lowercase, numbers, symbols)
+  - Ambiguous character exclusion option
+  - Passphrase generation for memorable passwords
+  - Real-time strength analysis with crack time estimation
+- **Search & Filter**: Real-time search across all vault fields with type filtering
+- **Settings Management**:
+  - Auto-lock timeout configuration
+  - API server URL customization
+  - Theme selection (light/dark)
+  - Account management (logout, clear data)
+- **User Experience**:
+  - Copy-to-clipboard functionality
+  - Show/hide password toggle
+  - Confirmation dialogs for destructive actions
+  - Sync with backend server
+  - Empty state handling
+
+## Next Steps (Week 5-6)
+
+1. Implement auto-fill detection and injection
+2. Add browser context menu integration
+3. Implement content script for form detection
+4. Add comprehensive tests
+5. Performance optimization
 
 ## License
 

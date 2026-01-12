@@ -15,6 +15,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Unlock } from './pages/Unlock';
 import { Vault } from './pages/Vault';
+import { Settings } from './pages/Settings';
 
 export function App() {
   const { currentView, setView, unlock, setLoading } = useAppStore();
@@ -87,6 +88,10 @@ export function App() {
 
   if (currentView === 'vault') {
     return <Vault />;
+  }
+
+  if (currentView === 'settings') {
+    return <Settings />;
   }
 
   // Fallback
