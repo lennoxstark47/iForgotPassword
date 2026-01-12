@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Icons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        canvas {
+            margin: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Icon Generator for iForgotPassword</h1>
+    <p>Click the button to generate and download all required icons:</p>
+    <button onclick="generateAllIcons()">Generate All Icons</button>
+    <div id="preview"></div>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+
+            // Background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#4F46E5'); // Indigo
+            gradient.addColorStop(1, '#7C3AED'); // Purple
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw key icon
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = size / 128;
+
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 4 * scale;
+
+            // Key circle (head)
+            ctx.beginPath();
+            ctx.arc(centerX - 15 * scale, centerY - 10 * scale, 20 * scale, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Key shaft
+            ctx.beginPath();
+            ctx.moveTo(centerX + 5 * scale, centerY - 10 * scale);
+            ctx.lineTo(centerX + 35 * scale, centerY - 10 * scale);
+            ctx.stroke();
+
+            // Key teeth
+            ctx.beginPath();
+            ctx.moveTo(centerX + 25 * scale, centerY - 10 * scale);
+            ctx.lineTo(centerX + 25 * scale, centerY + 5 * scale);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX + 35 * scale, centerY - 10 * scale);
+            ctx.lineTo(centerX + 35 * scale, centerY + 10 * scale);
+            ctx.stroke();
+        }
+
+        function downloadIcon(canvas, filename) {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function generateAllIcons() {
+            const sizes = [16, 32, 48, 128];
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '<h2>Generated Icons:</h2>';
+
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                drawIcon(canvas, size);
+
+                const container = document.createElement('div');
+                container.innerHTML = `<p>${size}x${size}px</p>`;
+                container.appendChild(canvas);
+                preview.appendChild(container);
+
+                // Auto-download
+                setTimeout(() => {
+                    downloadIcon(canvas, `icon-${size}.png`);
+                }, 100 * sizes.indexOf(size));
+            });
+        }
+    </script>
+</body>
+</html>

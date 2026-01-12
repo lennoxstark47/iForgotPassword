@@ -7,7 +7,6 @@ import { getDatabase } from '../services/database';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { BadRequestError, UnauthorizedError, ConflictError } from '../utils/errors';
 import { validateRegistration, validateLogin } from '@iforgotpassword/shared-validators';
-import { hashAuthKey } from '@iforgotpassword/shared-crypto';
 import type {
   RegisterRequest,
   LoginRequest,
@@ -37,13 +36,11 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       throw new ConflictError('User with this email already exists');
     }
 
-    // Hash the auth key before storing
-    const hashedAuthKey = hashAuthKey(Buffer.from(data.authKey, 'base64'));
-
-    // Create user
+    // Auth key is already hashed by the client (SHA-256 of raw authKey)
+    // Store it directly without additional hashing
     const user = await db.createUser({
       ...data,
-      authKey: hashedAuthKey,
+      authKey: data.authKey, // Already base64-encoded SHA-256 hash
     });
 
     // Generate tokens
@@ -91,11 +88,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       throw new UnauthorizedError('Account is temporarily locked. Please try again later.');
     }
 
-    // Hash the provided auth key
-    const hashedAuthKey = hashAuthKey(Buffer.from(data.authKey, 'base64'));
-
-    // Compare auth keys
-    if (hashedAuthKey !== user.authKeyHash) {
+    // Auth key is already hashed by the client (SHA-256 of raw authKey)
+    // Compare directly without additional hashing
+    if (data.authKey !== user.authKeyHash) {
       // Increment failed attempts
       const failedAttempts = user.failedLoginAttempts + 1;
       const updates: any = {

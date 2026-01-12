@@ -4,14 +4,16 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 // @ts-ignore
 import fs from 'fs';
+// @ts-ignore
+import { build as viteBuild } from 'vite';
 
 export default defineConfig({
   plugins: [
     react(),
-    // Custom plugin to copy manifest and handle multi-entry builds
+    // Custom plugin to copy manifest and build content script separately
     {
       name: 'build-extension',
-      writeBundle() {
+      async writeBundle() {
         // Copy manifest to dist
         const manifest = fs.readFileSync(path.resolve(__dirname, 'src/manifest.json'), 'utf-8');
         fs.writeFileSync(path.resolve(__dirname, 'dist/manifest.json'), manifest);
@@ -29,6 +31,38 @@ export default defineConfig({
             );
           });
         }
+
+        // Build content script separately with all dependencies inlined
+        console.log('Building content script separately...');
+        await viteBuild({
+          configFile: false,
+          build: {
+            outDir: path.resolve(__dirname, 'dist'),
+            emptyOutDir: false,
+            lib: {
+              entry: path.resolve(__dirname, 'src/content.ts'),
+              name: 'ContentScript',
+              formats: ['iife'],
+              fileName: () => 'src/content.js',
+            },
+            rollupOptions: {
+              output: {
+                entryFileNames: 'src/content.js',
+                inlineDynamicImports: true,
+              },
+            },
+          },
+          resolve: {
+            alias: {
+              '@': path.resolve(__dirname, './src'),
+              '@shared/types': path.resolve(__dirname, '../shared/types/src'),
+              '@shared/crypto': path.resolve(__dirname, '../shared/crypto/src'),
+              '@shared/constants': path.resolve(__dirname, '../shared/constants/src'),
+              '@shared/validators': path.resolve(__dirname, '../shared/validators/src'),
+            },
+          },
+        });
+        console.log('Content script built successfully!');
       },
     },
   ],
@@ -52,7 +86,7 @@ export default defineConfig({
       input: {
         popup: path.resolve(__dirname, 'src/pages/popup.html'),
         background: path.resolve(__dirname, 'src/background.ts'),
-        content: path.resolve(__dirname, 'src/content.ts'),
+        // content is built separately in the plugin above
       },
       output: {
         entryFileNames: (chunkInfo) => {
@@ -63,17 +97,16 @@ export default defineConfig({
           return '[name].js';
         },
         chunkFileNames: 'src/[name]-[hash].js',
-        // Inline everything for background and content to avoid module imports
+        // Prevent code splitting - inline all dependencies into their entry files
         inlineDynamicImports: false,
-        manualChunks: (id) => {
-          // Keep background and content scripts separate and inline their dependencies
-          if (id.includes('background.ts')) return 'background';
-          if (id.includes('content.ts')) return 'content';
-          // Put shared dependencies in src/ folder for background/content
-          if (id.includes('webextension-polyfill')) return 'src/webextension-polyfill';
+        manualChunks(id) {
+          // Don't create any shared chunks - keep dependencies with their entries
+          // This prevents webextension-polyfill from being extracted
           return undefined;
         },
       },
+      // Ensure each entry is self-contained
+      preserveEntrySignatures: 'strict',
     },
   },
 });
