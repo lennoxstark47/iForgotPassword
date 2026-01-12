@@ -62,9 +62,17 @@ export default defineConfig({
           }
           return '[name].js';
         },
-        // Prevent code splitting - each entry should be self-contained
-        manualChunks: undefined,
+        chunkFileNames: 'src/[name]-[hash].js',
+        // Inline everything for background and content to avoid module imports
         inlineDynamicImports: false,
+        manualChunks: (id) => {
+          // Keep background and content scripts separate and inline their dependencies
+          if (id.includes('background.ts')) return 'background';
+          if (id.includes('content.ts')) return 'content';
+          // Put shared dependencies in src/ folder for background/content
+          if (id.includes('webextension-polyfill')) return 'src/webextension-polyfill';
+          return undefined;
+        },
       },
     },
   },
