@@ -7,6 +7,7 @@
 import browser from 'webextension-polyfill';
 import { syncService } from './services/sync';
 import { indexedDB } from './storage/indexedDB';
+import { autofillService } from './services/autofill';
 
 console.log('iForgotPassword background service worker loaded');
 
@@ -123,7 +124,7 @@ self.addEventListener('offline', () => {
 });
 
 // Listen for messages from popup or content scripts
-browser.runtime.onMessage.addListener((message, _sender) => {
+browser.runtime.onMessage.addListener((message, sender) => {
   console.log('Background received message:', message);
 
   if (message.type === 'VAULT_UNLOCKED') {
@@ -155,6 +156,9 @@ browser.runtime.onMessage.addListener((message, _sender) => {
           browser.runtime.sendMessage({ type: 'SYNC_ERROR', error: error.message });
         }
       });
+  } else if (message.type === 'GET_AUTOFILL_CREDENTIALS') {
+    // Handle autofill credential request from content script
+    return handleAutofillRequest(message.url, sender.tab?.id);
   }
 
   return true; // Keep the message channel open for async response
@@ -166,6 +170,69 @@ browser.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
     console.log('Tab updated:', tab.url);
   }
 });
+
+/**
+ * Handle autofill credential request
+ */
+async function handleAutofillRequest(url: string, tabId?: number): Promise<any> {
+  try {
+    // Security check: verify the request is from a valid tab
+    if (!tabId) {
+      return { success: false, error: 'Invalid request source' };
+    }
+
+    // Check if the form is safe to autofill
+    const isSafe = await autofillService.isFormSafe(tabId);
+    if (!isSafe) {
+      return {
+        success: false,
+        error: 'Autofill blocked: page is not secure (HTTPS required)',
+      };
+    }
+
+    // Check if vault is unlocked (has encryption key in session)
+    const sessionData = await browser.storage.session.get(['encryptionKey']);
+    if (!sessionData.encryptionKey) {
+      return {
+        success: false,
+        error: 'Vault is locked. Please unlock to use autofill.',
+      };
+    }
+
+    // Convert stored key back to CryptoKey
+    const encryptionKey = await importEncryptionKey(sessionData.encryptionKey);
+
+    // Get matching credentials
+    const credentials = await autofillService.getMatchingCredentials(url, encryptionKey);
+
+    return {
+      success: true,
+      credentials,
+    };
+  } catch (error) {
+    console.error('Autofill request failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get credentials',
+    };
+  }
+}
+
+/**
+ * Import encryption key from stored JWK
+ */
+async function importEncryptionKey(jwk: any): Promise<CryptoKey> {
+  return await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    {
+      name: 'AES-GCM',
+      length: 256,
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
+}
 
 // Initialize on startup
 setupAlarms();
