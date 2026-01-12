@@ -7,12 +7,13 @@ import { openDB, type IDBPDatabase } from 'idb';
 import type { VaultItem } from '@iforgotpassword/shared-types';
 
 const DB_NAME = 'iforgotpassword';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Store names
 const VAULT_STORE = 'vault';
 const SYNC_STORE = 'sync';
 const METADATA_STORE = 'metadata';
+const SYNC_QUEUE_STORE = 'sync_queue';
 
 interface SyncMetadata {
   lastSyncVersion: number;
@@ -27,6 +28,15 @@ interface VaultMetadata {
   lastModified: number;
 }
 
+export interface SyncQueueItem {
+  id: string;
+  action: 'create' | 'update' | 'delete';
+  itemId: string;
+  itemData?: any;
+  timestamp: number;
+  retryCount: number;
+}
+
 class IndexedDBService {
   private db: IDBPDatabase | null = null;
 
@@ -35,7 +45,7 @@ class IndexedDBService {
    */
   async init(): Promise<void> {
     this.db = await openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion) {
         // Vault items store
         if (!db.objectStoreNames.contains(VAULT_STORE)) {
           const vaultStore = db.createObjectStore(VAULT_STORE, { keyPath: 'id' });
@@ -53,6 +63,13 @@ class IndexedDBService {
         // General metadata store
         if (!db.objectStoreNames.contains(METADATA_STORE)) {
           db.createObjectStore(METADATA_STORE, { keyPath: 'key' });
+        }
+
+        // Sync queue store (added in version 2)
+        if (oldVersion < 2 && !db.objectStoreNames.contains(SYNC_QUEUE_STORE)) {
+          const queueStore = db.createObjectStore(SYNC_QUEUE_STORE, { keyPath: 'id' });
+          queueStore.createIndex('timestamp', 'timestamp');
+          queueStore.createIndex('action', 'action');
         }
       },
     });
@@ -174,6 +191,58 @@ class IndexedDBService {
     await db.put(METADATA_STORE, { key: 'vault', ...metadata });
   }
 
+  // ==================== Sync Queue ====================
+
+  /**
+   * Add an item to the sync queue
+   */
+  async addToSyncQueue(item: Omit<SyncQueueItem, 'id' | 'timestamp' | 'retryCount'>): Promise<void> {
+    const db = this.getDB();
+    const queueItem: SyncQueueItem = {
+      ...item,
+      id: `${item.action}_${item.itemId}_${Date.now()}`,
+      timestamp: Date.now(),
+      retryCount: 0,
+    };
+    await db.put(SYNC_QUEUE_STORE, queueItem);
+  }
+
+  /**
+   * Get all items in the sync queue
+   */
+  async getSyncQueue(): Promise<SyncQueueItem[]> {
+    const db = this.getDB();
+    return db.getAll(SYNC_QUEUE_STORE);
+  }
+
+  /**
+   * Remove an item from the sync queue
+   */
+  async removeFromSyncQueue(id: string): Promise<void> {
+    const db = this.getDB();
+    await db.delete(SYNC_QUEUE_STORE, id);
+  }
+
+  /**
+   * Clear the sync queue
+   */
+  async clearSyncQueue(): Promise<void> {
+    const db = this.getDB();
+    await db.clear(SYNC_QUEUE_STORE);
+  }
+
+  /**
+   * Increment retry count for a queue item
+   */
+  async incrementQueueRetryCount(id: string): Promise<void> {
+    const db = this.getDB();
+    const item = await db.get(SYNC_QUEUE_STORE, id);
+    if (item) {
+      item.retryCount += 1;
+      await db.put(SYNC_QUEUE_STORE, item);
+    }
+  }
+
   // ==================== Cleanup ====================
 
   /**
@@ -185,6 +254,7 @@ class IndexedDBService {
       db.clear(VAULT_STORE),
       db.clear(SYNC_STORE),
       db.clear(METADATA_STORE),
+      db.clear(SYNC_QUEUE_STORE),
     ]);
   }
 

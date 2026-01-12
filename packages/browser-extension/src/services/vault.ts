@@ -16,6 +16,7 @@ import type {
 import { indexedDB } from '../storage/indexedDB';
 import { apiService } from './api';
 import { localStorageService } from '../storage/localStorage';
+import { syncService } from './sync';
 
 export type DecryptedItem = {
   id: string;
@@ -165,44 +166,82 @@ class VaultService {
         }
       }
 
-      // Call API to create item
-      const response = (await apiService.createVaultItem({
-        encryptedData,
-        encryptedKey: '', // For now, we use the same encryption key
-        iv,
-        authTag,
-        itemType: type,
-        urlDomain,
-      })) as CreateVaultItemResponse;
-
-      // Create VaultItem object for local storage
-      const vaultItem: VaultItem = {
-        id: response.id,
-        userId: '', // Will be set by backend
-        encryptedData,
-        encryptedKey: '',
-        iv,
-        authTag,
-        itemType: type,
-        urlDomain,
-        version: response.version,
-        lastModifiedAt: new Date(),
-        lastModifiedBy: deviceId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      // Save to IndexedDB
       await indexedDB.init();
-      await indexedDB.saveVaultItem(vaultItem);
 
-      return {
-        id: response.id,
-        type,
-        data,
-        createdAt: vaultItem.createdAt,
-        updatedAt: vaultItem.updatedAt,
-      };
+      // Try to create on server, queue if offline
+      try {
+        // Call API to create item
+        const response = (await apiService.createVaultItem({
+          encryptedData,
+          encryptedKey: '', // For now, we use the same encryption key
+          iv,
+          authTag,
+          itemType: type,
+          urlDomain,
+        })) as CreateVaultItemResponse;
+
+        // Create VaultItem object for local storage
+        const vaultItem: VaultItem = {
+          id: response.id,
+          userId: '', // Will be set by backend
+          encryptedData,
+          encryptedKey: '',
+          iv,
+          authTag,
+          itemType: type,
+          urlDomain,
+          version: response.version,
+          lastModifiedAt: new Date(),
+          lastModifiedBy: deviceId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // Save to IndexedDB
+        await indexedDB.saveVaultItem(vaultItem);
+
+        // Sync item immediately
+        await syncService.syncItem(response.id, 'create');
+
+        return {
+          id: response.id,
+          type,
+          data,
+          createdAt: vaultItem.createdAt,
+          updatedAt: vaultItem.updatedAt,
+        };
+      } catch (error) {
+        // If offline or server error, create locally and queue
+        console.warn('Server unavailable, creating item locally and queuing sync');
+
+        const tempId = `temp_${Date.now()}`;
+        const vaultItem: VaultItem = {
+          id: tempId,
+          userId: '',
+          encryptedData,
+          encryptedKey: '',
+          iv,
+          authTag,
+          itemType: type,
+          urlDomain,
+          version: 1,
+          lastModifiedAt: new Date(),
+          lastModifiedBy: deviceId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await indexedDB.saveVaultItem(vaultItem);
+        await syncService.queueChange('create', tempId);
+
+        return {
+          id: tempId,
+          type,
+          data,
+          createdAt: vaultItem.createdAt,
+          updatedAt: vaultItem.updatedAt,
+        };
+      }
     } catch (error) {
       console.error('Failed to create vault item:', error);
       throw new Error('Failed to create vault item');
@@ -241,42 +280,73 @@ class VaultService {
         }
       }
 
-      // Call API to update item
-      const response = (await apiService.updateVaultItem(id, {
-        encryptedData,
-        encryptedKey: '',
-        iv,
-        authTag,
-        version: existingItem.version,
-        urlDomain,
-      })) as UpdateVaultItemResponse;
-
       // Get device ID
       const deviceId = await localStorageService.getDeviceId();
 
-      // Update VaultItem object
-      const updatedItem: VaultItem = {
-        ...existingItem,
-        encryptedData,
-        iv,
-        authTag,
-        urlDomain,
-        version: response.version,
-        lastModifiedAt: new Date(),
-        lastModifiedBy: deviceId,
-        updatedAt: new Date(),
-      };
+      try {
+        // Call API to update item
+        const response = (await apiService.updateVaultItem(id, {
+          encryptedData,
+          encryptedKey: '',
+          iv,
+          authTag,
+          version: existingItem.version,
+          urlDomain,
+        })) as UpdateVaultItemResponse;
 
-      // Save to IndexedDB
-      await indexedDB.saveVaultItem(updatedItem);
+        // Update VaultItem object
+        const updatedItem: VaultItem = {
+          ...existingItem,
+          encryptedData,
+          iv,
+          authTag,
+          urlDomain,
+          version: response.version,
+          lastModifiedAt: new Date(),
+          lastModifiedBy: deviceId,
+          updatedAt: new Date(),
+        };
 
-      return {
-        id,
-        type,
-        data,
-        createdAt: updatedItem.createdAt,
-        updatedAt: updatedItem.updatedAt,
-      };
+        // Save to IndexedDB
+        await indexedDB.saveVaultItem(updatedItem);
+
+        // Sync item immediately
+        await syncService.syncItem(id, 'update');
+
+        return {
+          id,
+          type,
+          data,
+          createdAt: updatedItem.createdAt,
+          updatedAt: updatedItem.updatedAt,
+        };
+      } catch (error) {
+        // If offline or server error, update locally and queue
+        console.warn('Server unavailable, updating item locally and queuing sync');
+
+        const updatedItem: VaultItem = {
+          ...existingItem,
+          encryptedData,
+          iv,
+          authTag,
+          urlDomain,
+          version: existingItem.version + 1,
+          lastModifiedAt: new Date(),
+          lastModifiedBy: deviceId,
+          updatedAt: new Date(),
+        };
+
+        await indexedDB.saveVaultItem(updatedItem);
+        await syncService.queueChange('update', id);
+
+        return {
+          id,
+          type,
+          data,
+          createdAt: updatedItem.createdAt,
+          updatedAt: updatedItem.updatedAt,
+        };
+      }
     } catch (error) {
       console.error('Failed to update vault item:', error);
       throw new Error('Failed to update vault item');
@@ -288,12 +358,24 @@ class VaultService {
    */
   async deleteItem(id: string): Promise<void> {
     try {
-      // Call API to delete item
-      await apiService.deleteVaultItem(id);
-
-      // Soft delete from IndexedDB
       await indexedDB.init();
-      await indexedDB.deleteVaultItem(id);
+
+      try {
+        // Call API to delete item
+        await apiService.deleteVaultItem(id);
+
+        // Soft delete from IndexedDB
+        await indexedDB.deleteVaultItem(id);
+
+        // Sync deletion immediately
+        await syncService.syncItem(id, 'delete');
+      } catch (error) {
+        // If offline or server error, delete locally and queue
+        console.warn('Server unavailable, deleting item locally and queuing sync');
+
+        await indexedDB.deleteVaultItem(id);
+        await syncService.queueChange('delete', id);
+      }
     } catch (error) {
       console.error('Failed to delete vault item:', error);
       throw new Error('Failed to delete vault item');
@@ -302,32 +384,29 @@ class VaultService {
 
   /**
    * Sync vault items with server
+   * Now uses the comprehensive sync service
    */
-  async syncWithServer(): Promise<void> {
+  async syncWithServer(encryptionKey?: CryptoKey): Promise<void> {
     try {
-      await indexedDB.init();
-      const deviceId = await localStorageService.getDeviceId();
-      const syncMetadata = await indexedDB.getSyncMetadata();
-      const lastSyncVersion = syncMetadata?.lastSyncVersion || 0;
-
-      // Pull changes from server
-      const pullResponse = (await apiService.syncPull(deviceId, lastSyncVersion)) as any;
-
-      // Save pulled items to IndexedDB
-      if (pullResponse.items && pullResponse.items.length > 0) {
-        await indexedDB.saveVaultItems(pullResponse.items);
-      }
-
-      // Update sync metadata
-      await indexedDB.saveSyncMetadata({
-        lastSyncVersion: pullResponse.syncVersion || 0,
-        lastSyncTimestamp: Date.now(),
-        deviceId,
-      });
+      await syncService.fullSync(encryptionKey);
     } catch (error) {
       console.error('Failed to sync with server:', error);
       throw new Error('Failed to sync vault');
     }
+  }
+
+  /**
+   * Get sync status
+   */
+  getSyncStatus() {
+    return syncService.getState();
+  }
+
+  /**
+   * Subscribe to sync state changes
+   */
+  onSyncStateChange(callback: (state: any) => void) {
+    return syncService.subscribe(callback);
   }
 
   // Helper methods
