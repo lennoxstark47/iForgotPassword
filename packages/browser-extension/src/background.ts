@@ -224,10 +224,12 @@ browser.runtime.onMessage.addListener((message, sender) => {
       });
   } else if (message.type === 'GET_AUTOFILL_CREDENTIALS') {
     // Handle autofill credential request from content script
+    // Must return the promise directly for async response
     return handleAutofillRequest(message.url, sender.tab?.id);
   }
 
-  return true; // Keep the message channel open for async response
+  // For async responses, we need to return true or a Promise
+  return true;
 });
 
 // Listen for tab updates to inject content scripts if needed

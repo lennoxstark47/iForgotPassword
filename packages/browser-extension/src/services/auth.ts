@@ -143,23 +143,26 @@ class AuthService {
     // Save user email locally (in case it wasn't saved before)
     await localStorage.setUserEmail(email);
 
-    // Notify background script with full session data (non-blocking, ignore errors)
+    // Notify background script with full session data (non-blocking, fire-and-forget)
     try {
       const exported = await crypto.subtle.exportKey('raw', keys.encryptionKey);
       const keyString = this.arrayBufferToBase64(exported);
       
-      await browser.runtime.sendMessage({
+      // Don't await - fire and forget to avoid blocking
+      browser.runtime.sendMessage({
         type: 'VAULT_UNLOCKED',
         encryptionKey: keyString,
         accessToken: loginResponse.token,
         refreshToken: loginResponse.refreshToken,
         userEmail: email,
         isFirefox: navigator.userAgent.includes('Firefox'),
+      }).catch(error => {
+        // Background script might not be ready or message passing might fail
+        // This is non-critical, so we just log it
+        console.warn('Failed to notify background script:', error);
       });
     } catch (error) {
-      // Background script might not be ready or message passing might fail
-      // This is non-critical, so we can continue
-      console.warn('Failed to notify background script:', error);
+      console.warn('Failed to export encryption key:', error);
     }
 
     console.log('[AUTH] Unlock complete, returning result');

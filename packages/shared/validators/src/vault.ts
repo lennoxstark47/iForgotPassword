@@ -61,9 +61,9 @@ export function validateEncryptedVaultItem(data: {
     errors.push('Encrypted data is required');
   }
 
-  // Validate encrypted key
-  if (!data.encryptedKey || typeof data.encryptedKey !== 'string') {
-    errors.push('Encrypted key is required');
+  // Validate encrypted key (optional - can be empty string if using master key encryption)
+  if (data.encryptedKey !== undefined && typeof data.encryptedKey !== 'string') {
+    errors.push('Encrypted key must be a string');
   }
 
   // Validate IV

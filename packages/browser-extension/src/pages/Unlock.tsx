@@ -49,7 +49,13 @@ export function Unlock() {
       // Update state
       unlock(result.email, result.encryptionKey);
       
-      console.log('[UNLOCK] Store updated successfully');
+      console.log('[UNLOCK] Store updated, current view:', useAppStore.getState().currentView);
+      
+      // Explicitly set view to ensure UI updates (workaround for state update timing)
+      const { setView } = useAppStore.getState();
+      setView('vault');
+      
+      console.log('[UNLOCK] Explicitly set view to vault');
       setLoading(false);
     } catch (error) {
       console.error('[UNLOCK] ============ ERROR OCCURRED ============');

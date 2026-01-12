@@ -113,8 +113,14 @@ class AutofillService {
   isSecurePage(url: string): boolean {
     try {
       const urlObj = new URL(url);
-      // Allow localhost for development
-      if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+      // Allow localhost and local IPs for development
+      if (
+        urlObj.hostname === 'localhost' ||
+        urlObj.hostname === '127.0.0.1' ||
+        urlObj.hostname.startsWith('192.168.') ||
+        urlObj.hostname.startsWith('10.') ||
+        urlObj.hostname.endsWith('.local')
+      ) {
         return true;
       }
       return urlObj.protocol === 'https:';

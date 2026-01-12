@@ -43,7 +43,7 @@ export function Vault() {
     filterItems();
   }, [searchQuery, filterType, items]);
 
-  const loadVaultItems = async () => {
+  const loadVaultItems = async (shouldSync = true) => {
     if (!encryptionKey) {
       setError('Encryption key not available');
       setIsLoading(false);
@@ -53,8 +53,21 @@ export function Vault() {
     try {
       setIsLoading(true);
       setError('');
+      
+      // First, try to sync with server to get latest data
+      if (shouldSync && navigator.onLine) {
+        console.log('[VAULT] Syncing with server on load...');
+        try {
+          await vaultService.syncWithServer();
+        } catch (syncError) {
+          console.warn('[VAULT] Sync failed, loading local data:', syncError);
+          // Continue to load local data even if sync fails
+        }
+      }
+      
       const loadedItems = await vaultService.getAllItems(encryptionKey);
       setItems(loadedItems);
+      console.log(`[VAULT] Loaded ${loadedItems.length} items`);
     } catch (error) {
       console.error('Failed to load vault items:', error);
       setError('Failed to load vault items');
@@ -104,7 +117,8 @@ export function Vault() {
       setIsSyncing(true);
       setError('');
       await vaultService.syncWithServer();
-      await loadVaultItems();
+      // Don't sync again when reloading after manual sync
+      await loadVaultItems(false);
     } catch (error) {
       console.error('Failed to sync:', error);
       setError('Failed to sync with server');

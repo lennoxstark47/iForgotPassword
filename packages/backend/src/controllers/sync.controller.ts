@@ -35,16 +35,25 @@ export async function pullChanges(req: Request, res: Response, next: NextFunctio
 
     // Get the last sync timestamp for this device
     const syncMetadata = await db.getSyncMetadata(userId, data.deviceId);
-    const lastSyncTimestamp = syncMetadata?.lastSyncAt || new Date(0);
+    
+    // If this is the first sync (lastSyncVersion = 0), get ALL items
+    // Otherwise, use the last sync timestamp to get only changed items
+    const lastSyncTimestamp = data.lastSyncVersion === 0 ? new Date(0) : (syncMetadata?.lastSyncAt || new Date(0));
+
+    logger.info(`Sync pull details: lastSyncVersion requested: ${data.lastSyncVersion}, lastSyncTimestamp: ${lastSyncTimestamp}, isFirstSync: ${data.lastSyncVersion === 0}`);
 
     // Get items modified since last sync
     const items = await db.getVaultItems(userId, { since: lastSyncTimestamp });
+
+    logger.info(`Found ${items.length} items modified since ${lastSyncTimestamp}`);
 
     // Get deleted item IDs since last sync
     const deletedIds = await db.getDeletedVaultItems(userId, lastSyncTimestamp);
 
     // Get current sync version
     const currentVersion = await db.getCurrentSyncVersion(userId);
+    
+    logger.info(`Current sync version: ${currentVersion}`);
 
     // For Week 3-4, we'll do basic conflict detection (just report them)
     // More sophisticated conflict resolution will be in Month 3

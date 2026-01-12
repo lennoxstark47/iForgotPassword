@@ -355,7 +355,10 @@ class SyncService {
    * Sync a single item immediately (optimistic sync)
    */
   async syncItem(itemId: string, action: 'create' | 'update' | 'delete'): Promise<void> {
+    console.log(`[SYNC] syncItem called: ${action} ${itemId}`);
+    
     if (!this.isOnline()) {
+      console.log('[SYNC] Offline, queuing change');
       await this.queueChange(action, itemId);
       return;
     }
@@ -372,12 +375,17 @@ class SyncService {
         if (item) {
           change.item = item;
           change.version = item.version;
+          console.log('[SYNC] Pushing change to server:', { action, itemId, version: item.version });
+        } else {
+          console.warn('[SYNC] Item not found in IndexedDB:', itemId);
+          return;
         }
       }
 
-      await apiService.syncPush(deviceId, [change]);
+      const response = await apiService.syncPush(deviceId, [change]);
+      console.log('[SYNC] Push successful:', response);
     } catch (error) {
-      console.error('Failed to sync item, queuing for later:', error);
+      console.error('[SYNC] Failed to sync item, queuing for later:', error);
       await this.queueChange(action, itemId);
     }
   }
