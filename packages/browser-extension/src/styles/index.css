@@ -8,8 +8,11 @@
     @apply box-border;
   }
 
-  body {
+  html, body {
     @apply m-0 p-0 font-sans antialiased;
+    width: 850px;
+    height: 650px;
+    overflow: hidden;
   }
 
   #root {
@@ -41,11 +44,139 @@
   .card {
     @apply bg-white rounded-lg shadow-md p-4;
   }
+
+  /* Two-panel layout styles */
+  .vault-layout {
+    @apply flex h-full;
+  }
+
+  .vault-sidebar {
+    @apply w-80 bg-white border-r border-gray-200 flex flex-col;
+  }
+
+  .vault-main {
+    @apply flex-1 bg-gray-50 flex flex-col;
+  }
+
+  /* Service icon styles */
+  .service-icon {
+    @apply w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors;
+  }
+
+  /* Suggestion card styles */
+  .suggestion-card {
+    @apply bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors flex items-center gap-3;
+  }
+
+  /* List item styles */
+  .list-item {
+    @apply px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100;
+  }
+
+  .list-item-selected {
+    @apply bg-blue-50 hover:bg-blue-50;
+  }
+
+  /* Detail view styles */
+  .detail-field {
+    @apply mb-4;
+  }
+
+  .detail-label {
+    @apply text-sm text-gray-500 mb-1;
+  }
+
+  .detail-value {
+    @apply text-base text-gray-900 font-medium;
+  }
+
+  /* Top bar styles */
+  .top-bar {
+    @apply h-16 bg-white border-b border-gray-200 flex items-center px-4 gap-4;
+  }
+
+  /* Icon button styles */
+  .icon-btn {
+    @apply w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer transition-colors;
+  }
+
+  .icon-btn-primary {
+    @apply icon-btn bg-blue-500 text-white hover:bg-blue-600;
+  }
+
+  /* Search bar styles */
+  .search-bar {
+    @apply flex-1 max-w-md;
+  }
+
+  .search-input {
+    @apply w-full px-4 py-2 bg-gray-50 rounded-lg border border-transparent focus:border-gray-300 focus:outline-none focus:bg-white transition-colors;
+  }
+
+  /* Menu dropdown styles */
+  .menu-dropdown {
+    @apply absolute right-4 top-14 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50;
+  }
+
+  .menu-item {
+    @apply px-4 py-2 hover:bg-gray-50 cursor-pointer flex items-center gap-3 text-gray-700;
+  }
+
+  /* Tab styles */
+  .tab-list {
+    @apply flex border-b border-gray-200;
+  }
+
+  .tab {
+    @apply px-4 py-2 cursor-pointer text-gray-600 hover:text-gray-900 border-b-2 border-transparent transition-colors;
+  }
+
+  .tab-active {
+    @apply text-blue-600 border-blue-600;
+  }
+
+  /* Slider styles */
+  .slider {
+    @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+  }
+
+  .slider::-webkit-slider-thumb {
+    @apply appearance-none w-4 h-4 bg-blue-500 rounded-full cursor-pointer;
+  }
+
+  .slider::-moz-range-thumb {
+    @apply w-4 h-4 bg-blue-500 rounded-full cursor-pointer border-0;
+  }
+
+  /* Toggle switch styles */
+  .toggle {
+    @apply relative inline-block w-12 h-6;
+  }
+
+  .toggle input {
+    @apply opacity-0 w-0 h-0;
+  }
+
+  .toggle-slider {
+    @apply absolute cursor-pointer inset-0 bg-gray-300 rounded-full transition-colors;
+  }
+
+  .toggle input:checked + .toggle-slider {
+    @apply bg-green-500;
+  }
+
+  .toggle-slider:before {
+    @apply absolute content-[''] h-5 w-5 left-0.5 bottom-0.5 bg-white rounded-full transition-transform;
+  }
+
+  .toggle input:checked + .toggle-slider:before {
+    @apply translate-x-6;
+  }
 }
 
 /* Extension-specific styles */
 .popup-container {
-  width: 380px;
-  min-height: 500px;
-  max-height: 600px;
+  width: 850px;
+  height: 650px;
+  overflow: hidden;
 }

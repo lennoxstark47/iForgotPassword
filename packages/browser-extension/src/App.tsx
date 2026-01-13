@@ -14,7 +14,7 @@ import { Welcome } from './pages/Welcome';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Unlock } from './pages/Unlock';
-import { Vault } from './pages/Vault';
+import { VaultNew } from './pages/VaultNew';
 import { Settings } from './pages/Settings';
 
 export function App() {
@@ -87,7 +87,7 @@ export function App() {
   }
 
   if (currentView === 'vault') {
-    return <Vault />;
+    return <VaultNew />;
   }
 
   if (currentView === 'settings') {
