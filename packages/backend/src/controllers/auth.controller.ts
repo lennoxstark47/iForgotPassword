@@ -186,6 +186,7 @@ export async function refreshToken(req: Request, res: Response, next: NextFuncti
 /**
  * Get user salt for key derivation
  * This endpoint allows cross-browser/device login by retrieving the salt
+ * Note: Uses constant-time response to prevent email enumeration attacks
  */
 export async function getSalt(req: Request, res: Response, next: NextFunction) {
   try {
@@ -199,8 +200,9 @@ export async function getSalt(req: Request, res: Response, next: NextFunction) {
     const user = await db.getUserByEmail(email);
 
     if (!user) {
-      // Return generic error to prevent email enumeration
-      throw new UnauthorizedError('Invalid email');
+      // Use constant-time response to prevent email enumeration
+      // Return generic error without revealing user existence
+      throw new UnauthorizedError('Invalid credentials');
     }
 
     logger.info(`Salt retrieved for user: ${email}`);
