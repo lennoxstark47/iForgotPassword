@@ -36,11 +36,16 @@ export async function pullChanges(req: Request, res: Response, next: NextFunctio
     // Get the last sync timestamp for this device
     const syncMetadata = await db.getSyncMetadata(userId, data.deviceId);
     
-    // If this is the first sync (lastSyncVersion = 0), get ALL items
-    // Otherwise, use the last sync timestamp to get only changed items
-    const lastSyncTimestamp = data.lastSyncVersion === 0 ? new Date(0) : (syncMetadata?.lastSyncAt || new Date(0));
+    // Determine if this is truly a first sync:
+    // 1. lastSyncVersion is 0 (client says it's first sync)
+    // 2. OR syncMetadata doesn't exist (device never synced before)
+    // 3. OR lastSyncAt is null/undefined (device registered but never pulled)
+    const isFirstSync = data.lastSyncVersion === 0 || !syncMetadata || !syncMetadata.lastSyncAt;
+    
+    // For first sync, get ALL items; otherwise use timestamp for incremental sync
+    const lastSyncTimestamp = isFirstSync ? new Date(0) : (syncMetadata?.lastSyncAt || new Date(0));
 
-    logger.info(`Sync pull details: lastSyncVersion requested: ${data.lastSyncVersion}, lastSyncTimestamp: ${lastSyncTimestamp}, isFirstSync: ${data.lastSyncVersion === 0}`);
+    logger.info(`Sync pull details: lastSyncVersion requested: ${data.lastSyncVersion}, lastSyncTimestamp: ${lastSyncTimestamp}, isFirstSync: ${isFirstSync}`);
 
     // Get items modified since last sync
     const items = await db.getVaultItems(userId, { since: lastSyncTimestamp });
@@ -59,11 +64,16 @@ export async function pullChanges(req: Request, res: Response, next: NextFunctio
     // More sophisticated conflict resolution will be in Month 3
     const conflicts: SyncConflict[] = [];
 
-    // Update sync metadata
-    await db.updateSyncMetadata(userId, data.deviceId, {
-      lastSyncAt: new Date(),
-      lastSyncVersion: currentVersion,
-    });
+    // Update sync metadata only if we got items or it's truly empty (currentVersion = 0)
+    // If no items were returned but currentVersion > 0, don't update to avoid missing items
+    if (items.length > 0 || currentVersion === 0) {
+      await db.updateSyncMetadata(userId, data.deviceId, {
+        lastSyncAt: new Date(),
+        lastSyncVersion: currentVersion,
+      });
+    } else {
+      logger.warn(`Sync pull returned 0 items but currentVersion is ${currentVersion}. Not updating sync metadata to avoid missing items.`);
+    }
 
     const response: SyncPullResponse = {
       items,
