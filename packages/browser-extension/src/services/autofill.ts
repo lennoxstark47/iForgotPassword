@@ -109,20 +109,27 @@ class AutofillService {
 
   /**
    * Security check: Verify the page is secure (HTTPS)
+   * Note: Allows localhost for development. This should be removed for production builds.
    */
   isSecurePage(url: string): boolean {
     try {
       const urlObj = new URL(url);
-      // Allow localhost and local IPs for development
-      if (
-        urlObj.hostname === 'localhost' ||
-        urlObj.hostname === '127.0.0.1' ||
-        urlObj.hostname.startsWith('192.168.') ||
-        urlObj.hostname.startsWith('10.') ||
-        urlObj.hostname.endsWith('.local')
-      ) {
-        return true;
+
+      // PRODUCTION: Remove this block for production builds
+      // Allow localhost and local IPs for development only
+      if (import.meta.env.MODE !== 'production') {
+        if (
+          urlObj.hostname === 'localhost' ||
+          urlObj.hostname === '127.0.0.1' ||
+          urlObj.hostname.startsWith('192.168.') ||
+          urlObj.hostname.startsWith('10.') ||
+          urlObj.hostname.endsWith('.local')
+        ) {
+          return true;
+        }
       }
+
+      // Production: Only allow HTTPS
       return urlObj.protocol === 'https:';
     } catch {
       return false;
