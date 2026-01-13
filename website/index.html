@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iForgotPassword - Secure Password Manager</title>
+    <meta name="description" content="A secure, privacy-focused password manager with zero-knowledge encryption. Your data stays private with end-to-end AES-256-GCM encryption.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            padding: 2rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .hero {
+            background: white;
+            border-radius: 10px;
+            padding: 3rem 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .feature {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature h3 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .security-note {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: white;
+            margin-top: 3rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #f6ad55;
+            color: #744210;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">🔐</div>
+            <h1>iForgotPassword</h1>
+            <p class="tagline">Secure Password Manager with Zero-Knowledge Encryption</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <div style="text-align: center;">
+                <span class="status-badge">BETA VERSION</span>
+                <h2>Your Passwords. Your Device. Your Privacy.</h2>
+                <p style="margin: 1rem 0; font-size: 1.1rem; color: #666;">
+                    A modern password manager built with privacy at its core.
+                    Your master password never leaves your device.
+                </p>
+
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary">
+                        📦 Add to Chrome (Coming Soon)
+                    </a>
+                    <a href="#" class="btn btn-secondary">
+                        🦊 Add to Firefox (Coming Soon)
+                    </a>
+                </div>
+            </div>
+
+            <div class="security-note">
+                <strong>🛡️ Zero-Knowledge Architecture:</strong>
+                Unlike other password managers, we mathematically guarantee your privacy.
+                Your data is encrypted on your device before it reaches our servers.
+                Not even we can decrypt your vault.
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🔒</div>
+                <h3>Military-Grade Encryption</h3>
+                <p>AES-256-GCM encryption with PBKDF2 key derivation. Your data is secure with industry-standard cryptography.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🔑</div>
+                <h3>Smart Auto-fill</h3>
+                <p>Intelligent form detection and one-click credential filling. Works seamlessly with modern web frameworks.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">💾</div>
+                <h3>Offline-First</h3>
+                <p>Full functionality without internet. Your encrypted vault is stored locally and syncs when you're online.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <h3>Multi-Device Sync</h3>
+                <p>Automatic synchronization across all your devices with smart conflict resolution.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🎲</div>
+                <h3>Password Generator</h3>
+                <p>Create strong, unique passwords with customizable options and real-time strength analysis.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🔍</div>
+                <h3>Quick Search</h3>
+                <p>Find credentials instantly with smart search across all fields and type filtering.</p>
+            </div>
+        </div>
+
+        <div class="hero">
+            <h2 style="text-align: center; margin-bottom: 2rem;">How It Works</h2>
+            <div style="display: grid; gap: 1.5rem;">
+                <div>
+                    <strong>1️⃣ Create Account:</strong>
+                    Set a strong master password. This password is NEVER sent to our servers.
+                </div>
+                <div>
+                    <strong>2️⃣ Add Credentials:</strong>
+                    Store passwords, credit cards, secure notes, and identities. Everything is encrypted locally.
+                </div>
+                <div>
+                    <strong>3️⃣ Auto-fill Login Forms:</strong>
+                    Click the key icon on login forms to instantly fill your credentials.
+                </div>
+                <div>
+                    <strong>4️⃣ Sync Across Devices:</strong>
+                    Your encrypted data automatically syncs across all your devices.
+                </div>
+            </div>
+        </div>
+
+        <div class="hero">
+            <h2 style="text-align: center; margin-bottom: 1rem;">Coming Soon</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 0.5rem 0;">📱 Mobile Apps (iOS & Android)</li>
+                <li style="padding: 0.5rem 0;">💻 Desktop Applications (Windows, macOS, Linux)</li>
+                <li style="padding: 0.5rem 0;">🏠 Self-Hosting Support</li>
+                <li style="padding: 0.5rem 0;">🔐 2FA/TOTP Generator</li>
+                <li style="padding: 0.5rem 0;">🚨 Breach Monitoring</li>
+                <li style="padding: 0.5rem 0;">📊 Password Health Audit</li>
+            </ul>
+        </div>
+
+        <div class="hero" style="background: #f7fafc;">
+            <h2 style="text-align: center; margin-bottom: 1rem;">Open Development</h2>
+            <p style="text-align: center; margin-bottom: 1rem;">
+                We believe in transparency. Follow our development on GitHub and help shape the future of iForgotPassword.
+            </p>
+            <div style="text-align: center;">
+                <a href="https://github.com/lennoxstark47/iForgotPassword"
+                   class="btn btn-primary"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 iForgotPassword. All rights reserved.</p>
+            <p style="margin-top: 0.5rem;">
+                <a href="../docs/legal/PRIVACY_POLICY.html" style="color: white; margin: 0 1rem;">Privacy Policy</a>
+                <a href="../docs/legal/TERMS_OF_SERVICE.html" style="color: white; margin: 0 1rem;">Terms of Service</a>
+                <a href="mailto:support@iforgotpassword.app" style="color: white; margin: 0 1rem;">Contact</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
